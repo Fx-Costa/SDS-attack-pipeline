@@ -9,4 +9,4 @@ A Python pipeline tool for analysis and attacks (data poisoning) on the SDS (k-a
 - maturin
 
 ## Structure of the pipeline
-![alt text](https://github.com/FxCosta/SDS-attack-pipeline/main/pipeline-diagram.png?raw=true)
+![pipeline](pipeline-diagram.png)
