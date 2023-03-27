@@ -141,10 +141,11 @@ class Evaluator:
             f.write('\t'.join(['risky_identifiable', str(
                 self.records_analysis_data.get_total_risky())])+'\n'
             )
-            f.write(
-                '\t'.join(['risky_identifiable_pct', str(
-                    100*self.records_analysis_data.get_total_risky()/total_sen)])+'\n'
-            )
+            if total_sen > 0:
+                f.write(
+                    '\t'.join(['risky_identifiable_pct', str(
+                        100*self.records_analysis_data.get_total_risky()/total_sen)])+'\n'
+                )
 
     def _find_leakages(self):
         logging.info(

@@ -1,3 +1,7 @@
-/Samples/
-*.md
-*.txt
+/samples/
+/samples/*
+/configs/
+/configs/*
+/synthetic/
+/synthetic/*
+*.iml

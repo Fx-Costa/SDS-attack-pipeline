@@ -94,7 +94,7 @@ def generate(config):
         raise ValueError(f'invalid synthesis mode: {synthesis_mode}')
 
     generated_data.write_synthetic_data(
-        synthetic_microdata_path, '\t', '', False, False)
+        synthetic_microdata_path, ',', '', False, False)
     syn_ratio = generated_data.expansion_ratio
 
     config['expansion_ratio'] = syn_ratio
