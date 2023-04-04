@@ -4,7 +4,6 @@ import os
 
 # TODO: get root dir and supply to paths. See: syn_config_path, sensitive_csv_path (should be generalized) and
 #  create_directory()
-# TODO: Logging
 
 
 def create_directory(directory):
@@ -17,6 +16,8 @@ def create_directory(directory):
     """
     if not os.path.exists("../" + directory):
         os.makedirs("../" + directory)
+        logging.debug("Created directory; " + directory)
+    logging.debug("Directory already exists; " + directory)
 
 
 class ConversionUtil:
@@ -72,6 +73,10 @@ class ConversionUtil:
         self.sensitive_csv_path = self.sensitive_csv_path + self.sensitive_csv_identifier + ".csv"
         self.dataframe.to_csv(self.sensitive_csv_path)
 
+        if os.path.isfile(self.sensitive_csv_path):
+            logging.debug("Overwriting existing sample with the same identifier; " + self.sensitive_csv_identifier)
+
+        logging.info("Successful dataframe to CSV conversion; created " + self.sensitive_csv_path)
         return self.sensitive_csv_path
 
     def dataframe_to_syn_config(self, synthesis_mode, k):
@@ -93,10 +98,14 @@ class ConversionUtil:
         self.syn_config["synthesis_mode"] = synthesis_mode
         self.syn_config["prefix"] = self.sensitive_csv_identifier
 
+        if os.path.isfile(self.syn_config_path):
+            logging.debug("Overwriting existing config with the same identifier; " + self.sensitive_csv_identifier)
+
         # Create JSON file
         json_dump = json.dumps(self.syn_config)
         json_file = open(self.syn_config_path, "w")
         json_file.write(json_dump)
         json_file.close()
 
+        logging.info("Successful CSV to JSON conversion; created " + self.syn_config_path)
         return self.syn_config_path

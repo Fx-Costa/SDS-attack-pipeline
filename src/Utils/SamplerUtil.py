@@ -1,8 +1,6 @@
 import pandas as pd
 import logging
 
-# TODO: Logging. Logging of incorrect usage, logging status in sampling, etc.
-
 
 class SamplerUtil:
     """
@@ -15,7 +13,7 @@ class SamplerUtil:
         """
         Creates an instance of SamplerUtil
 
-        :param dataset_path: filepath to the dataset to sample from
+        :param dataset_path: filepath to the CSV formatted dataset to sample from
         """
         self.dataset_path = dataset_path
 
@@ -26,15 +24,16 @@ class SamplerUtil:
         :param n: the number of samples (int) defaults to 1
         :param m: the number of columns in samples (int) defaults to all
         :param cols: the specific columns in samples (a list of strings) defaults to none
-        :return: a n by m, or n by cols (if given cols) sized pandas dataframe
+        :return: an n by m, or n by cols (if given cols) sized pandas dataframe
         """
         # If m and cols are both given
         # the number of columns in cols must match m
         if m != -1 and cols is not None and m != len(cols):
+            logging.error("Unsuccessful sampling; m = " + str(m) + " must match number of columns in cols = " + str(cols))
             return
 
         # Full dataframe
-        dataframe = pd.read_csv(self.dataset_path)
+        dataframe = pd.read_csv(self.dataset_path, na_values='N')
         dataframe.index.name = "ID"
 
         # Dropping columns based on m and/or cols
@@ -42,7 +41,11 @@ class SamplerUtil:
             # Drop all columns not in [0, m]
             dataframe = dataframe.drop(dataframe.iloc[:, m:len(dataframe.columns)], axis=1)
         elif cols is not None:    # If cols is given
-            dataframe = dataframe[cols]
+            try:
+                dataframe = dataframe[cols]
+            except KeyError:
+                logging.warning("Invalid input; cols = " + str(cols) + " do not exist in dataset, using all columns")
 
+        logging.info("Successful sampling; created n = " + str(n) + " by m = " + str(m) + " sized sample")
         # return the n random samples
         return dataframe.sample(n)

@@ -5,3 +5,5 @@
 /synthetic/
 /synthetic/*
 *.iml
+/.idea/
+/.idea/*

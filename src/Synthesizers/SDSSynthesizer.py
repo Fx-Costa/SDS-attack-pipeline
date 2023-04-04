@@ -1,7 +1,8 @@
 import os
+import logging
 
 # TODO: use python code (from python-pipeline/src/) instead of system commandos
-# TODO: move format specific functionality to utils file
+
 
 class SDSSynthesizer:
     """
@@ -14,7 +15,7 @@ class SDSSynthesizer:
         """
         Creates an instance of SDSSynthesizer given a path to a synthetic configuration file
 
-        :param syn_config_file: the synthetic configuration file path
+        :param syn_config_filepath: the synthetic configuration file path
         """
         self.syn_config_filepath = syn_config_filepath
 
@@ -28,8 +29,16 @@ class SDSSynthesizer:
         navigate : whether to navigate during synthesis,
         assumes all except verbose if none are given.
 
-        :param kwargs: keyword arguments
-        :return: path to the created synthetic file (string)
+        :param verbose: whether to output synthesis logs
+        :param aggregate: whether to perform aggregation step
+            (generates protected counts of records [reportable_aggregates])
+        :param generate: whether to perform generation step
+            (generates synthetic dataset [synthetic_microdata])
+        :param evaluate: whether to perform evaluation step
+            (evaluates synthetic dataset wrt. sensitive dataset [stats])
+        :param navigate: whether to perform navigation step
+            (generates Power BI template from synthetic and aggregate data)
+        :return: void
         """
         # Construct synthesis flags from arguments
         flags = " --aggregate --generate --evaluate --navigate"
@@ -50,28 +59,4 @@ class SDSSynthesizer:
         # Perform synthesis with given flags
         # TODO: generalize this
         os.system("python ../python-pipeline/src/showcase.py " + "../configs/test.json" + flags)
-
-
-""" 
-
-def main():
-    df, path = rd.main()
-    #df, path = rd.sample("../NIST dataset/NATIONAL.csv", 5, 3, "")
-    print("Creating configurations file...")
-    rd.write_to_syn_config(df, "")
-    print("Performing synthesization...")
-
-
-def synthesize(config_filepath):
-    #os.system("python python-pipeline/src/showcase.py config.json --v --agg --gen --eval")
-    os.system("python python-pipeline/src/showcase.py " + config_filepath + " --v --agg --gen --eval")
-
-
-def tsv_to_dataframe(filepath):
-    return pd.read_csv(filepath)
-
-
-if __name__ == '__main__':
-    main()
-    synthesize("configs/test.json")
-"""
+        logging.info("Successful synthesis; created " + self.syn_config_filepath)
