@@ -1,5 +1,6 @@
 import os
 import logging
+from Utils.ConfigUtil import ConfigUtil
 
 # TODO: use python code (from python-pipeline/src/) instead of system commandos
 
@@ -11,13 +12,12 @@ class SDSSynthesizer:
 
     Methods: synthesize(),
     """
-    def __init__(self, syn_config_filepath):
+    def __init__(self):
         """
         Creates an instance of SDSSynthesizer given a path to a synthetic configuration file
-
-        :param syn_config_filepath: the synthetic configuration file path
         """
-        self.syn_config_filepath = syn_config_filepath
+        self.syn_config_filepath = ConfigUtil.instance()["SYNTHETIC"]["config_dir"]
+        self.flags = {"verb": False, "agg": True, "gen": True, "eval": True, "nav": True}
 
     def synthesize(self, verbose=False, aggregate=False, generate=False, evaluate=False, navigate=False):
         """
@@ -44,19 +44,37 @@ class SDSSynthesizer:
         flags = " --aggregate --generate --evaluate --navigate"
         if verbose is True:
             flags = " --verbose" + flags
+            self.flags["verb"] = True
 
         # A current flag can only be set if all prior flags are also set, e.g.:
         # Evaluate can only be set if Generate is set, which in turn, can only be set if Aggregate is set.
         if navigate is False:
             flags = flags[:-(len(" --navigate"))]
+            self.flags["nav"] = False
             if evaluate is False:
                 flags = flags[:-(len(" --evaluate"))]
+                self.flags["eval"] = False
                 if generate is False:
                     flags = flags[:-(len(" --generate"))]
+                    self.flags["gen"] = False
                     if aggregate is False:
                         flags = flags[:-(len(" --aggregate"))]
+                        self.flags["agg"] = False
 
         # Perform synthesis with given flags
         # TODO: generalize this
         os.system("python ../python-pipeline/src/showcase.py " + "../configs/test.json" + flags)
         logging.info("Successful synthesis; created " + self.syn_config_filepath)
+        # TODO: using python-pipeline, return or set self to the synthetic dataset path
+
+    def resynthesize(self):
+        """
+        Performs synthesis with the same flags as the previous synthesis
+        :return: void
+        """
+        if self.flags is None:
+            logging.info("Unsuccessful re-synthesis; cannot re-synthesize before a synthesis has completed")
+        else:
+            self.synthesize(self.flags["verb"], self.flags["agg"], self.flags["gen"],
+                            self.flags["eval"], self.flags["nav"])
+            logging.info("Successful re-synthesis; created " + self.syn_config_filepath)

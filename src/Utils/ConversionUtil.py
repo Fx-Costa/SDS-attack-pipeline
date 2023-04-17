@@ -1,30 +1,14 @@
 import json
 import logging
 import os
-
-# TODO: get root dir and supply to paths. See: syn_config_path, sensitive_csv_path (should be generalized) and
-#  create_directory()
-
-
-def create_directory(directory):
-    """
-    Creates a directory at project root if the directory does not already exist. Necessary for below methods
-    to run as intended if no required directories exist.
-
-    :param directory: the name of the directory to create if it does not already exist
-    :return: void
-    """
-    if not os.path.exists("../" + directory):
-        os.makedirs("../" + directory)
-        logging.debug("Created directory; " + directory)
-    logging.debug("Directory already exists; " + directory)
+from Utils.ConfigUtil import ConfigUtil
 
 
 class ConversionUtil:
     """
     A class for utility functions to perform on pandas datatables.
 
-    Methods: dataframe_to_csv(), dataframe_to_syn_config()
+    Methods: dataframe_to_csv(), dataframe_to_syn_config(), create_directory()
     """
 
     def __init__(self, dataframe):
@@ -35,10 +19,11 @@ class ConversionUtil:
         """
         self.dataframe = dataframe
 
-        self.sensitive_csv_path = "C:\\Users\\Fx\\Desktop\\Bachelor Project\\SDS-attack-pipeline\\samples\\"
-        self.sensitive_csv_identifier = None
+        self.config = ConfigUtil.instance()
+        self.sensitive_csv_path = self.config["SENSITIVE"]["sample_dir"]
+        self.sensitive_csv_identifier = self.config["GENERAL"]["name"]
 
-        self.syn_config_path = "C:\\Users\\Fx\\Desktop\\Bachelor Project\\SDS-attack-pipeline\\configs\\"
+        self.syn_config_path = self.config["SYNTHETIC"]["config_dir"]
         self.syn_config = {
             "sensitive_microdata_path": "",
             "sensitive_microdata_delimiter": ",",
@@ -59,17 +44,15 @@ class ConversionUtil:
             "report_pages": {}
         }
 
-    def dataframe_to_csv(self, sensitive_csv_identifier):
+    def dataframe_to_csv(self):
         """
         Creates, in the 'samples' directory, a csv file from a dataframe with the given name sensitive_csv_identifier
 
-        :param sensitive_csv_identifier: the name (identifier) of the sensitive csv formatted dataset
         :return: path to the created CSV file (string)
         """
-        create_directory("samples")
+        self.create_directory("samples")
 
         # Create CSV file
-        self.sensitive_csv_identifier = sensitive_csv_identifier
         self.sensitive_csv_path = self.sensitive_csv_path + self.sensitive_csv_identifier + ".csv"
         self.dataframe.to_csv(self.sensitive_csv_path)
 
@@ -77,7 +60,6 @@ class ConversionUtil:
             logging.debug("Overwriting existing sample with the same identifier; " + self.sensitive_csv_identifier)
 
         logging.info("Successful dataframe to CSV conversion; created " + self.sensitive_csv_path)
-        return self.sensitive_csv_path
 
     def dataframe_to_syn_config(self, synthesis_mode, k):
         """
@@ -88,7 +70,7 @@ class ConversionUtil:
         :param k: the number k, to use in k-anonymity (as an int)
         :return: path to the created JSON file (string)
         """
-        create_directory("configs")
+        self.create_directory("configs")
         self.syn_config_path = self.syn_config_path + self.sensitive_csv_identifier + ".json"
 
         # Set synthesis config fields
@@ -108,4 +90,16 @@ class ConversionUtil:
         json_file.close()
 
         logging.info("Successful CSV to JSON conversion; created " + self.syn_config_path)
-        return self.syn_config_path
+
+    def create_directory(self, directory):
+        """
+        Creates a directory at project root if the directory does not already exist. Necessary for below methods
+        to run as intended if no required directories exist.
+
+        :param directory: the name of the directory to create if it does not already exist
+        :return: void
+        """
+        if not os.path.exists(self.config["GENERAL"]["root_dir"] + directory):
+            os.makedirs(self.config["GENERAL"]["root_dir"] + directory)
+            logging.debug("Created directory; " + directory)
+        logging.debug("Directory already exists; " + directory)

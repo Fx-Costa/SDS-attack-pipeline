@@ -1,21 +1,20 @@
 import pandas as pd
 import logging
+from Utils.ConfigUtil import ConfigUtil
 
 
 class SamplerUtil:
     """
     A class for sampling a dataset using pandas dataframes.
 
-    Methods: sample()
+    Methods: sample(), insert_sample(), insert_samples()
     """
 
-    def __init__(self, dataset_path):
+    def __init__(self):
         """
         Creates an instance of SamplerUtil
-
-        :param dataset_path: filepath to the CSV formatted dataset to sample from
         """
-        self.dataset_path = dataset_path
+        self.dataset_path = ConfigUtil.instance()["SENSITIVE"]["dataset_path"]
 
     def sample(self, n=1, m=-1, cols=None):
         """
@@ -45,6 +44,11 @@ class SamplerUtil:
                 dataframe = dataframe[cols]
             except KeyError:
                 logging.warning("Invalid input; cols = " + str(cols) + " do not exist in dataset, using all columns")
+
+        # If n is non-positive; return the empty df
+        if n < 1:
+            logging.debug("Empty sampling; n = " + str(n) + " returning an empty df")
+            return dataframe
 
         logging.info("Successful sampling; created n = " + str(n) + " by m = " + str(m) + " sized sample")
         # return the n random samples
