@@ -7,16 +7,16 @@ from Utils.LoggerUtil import LoggerUtil
 logger = LoggerUtil.instance()
 
 
-class FindKAttack:
+class NaiveAttacker:
     """
-    A class for determining K of a synthetic dataset.
+    A class for naive attacks on a SDS synthesized dataset
 
     Methods: sample()
     """
 
     def __init__(self, cols, synthesizer):
         """
-        Creates an instance of FindKAttack
+        Creates an instance of NaiveAttacker
         :param cols: a list of column names (strings)
         :param synthesizer: a synthesizer object
         """
@@ -45,3 +45,6 @@ class FindKAttack:
 
         logger.info("Unsuccessful attack; could not determine k within 1 to " + str(upper_bound))
         return
+
+    def leak(self):
+        pass
