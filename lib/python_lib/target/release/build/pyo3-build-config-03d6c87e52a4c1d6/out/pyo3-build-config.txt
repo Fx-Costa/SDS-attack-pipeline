@@ -1,0 +1,10 @@
+implementation=CPython
+version=3.8
+shared=true
+abi3=false
+lib_name=python38
+lib_dir=H:\Tools\Anaconda\libs
+executable=H:\Tools\Anaconda\python.exe
+pointer_width=64
+build_flags=
+suppress_build_script_link_lines=false
