@@ -7,3 +7,6 @@
 *.iml
 /.idea/
 /.idea/*
+*.d
+*.exe
+/lib/

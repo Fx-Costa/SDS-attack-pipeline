@@ -1,7 +1,9 @@
 import json
-import logging
 import os
 from Utils.ConfigUtil import ConfigUtil
+from Utils.LoggerUtil import LoggerUtil
+
+logger = LoggerUtil.instance()
 
 
 class ConversionUtil:
@@ -20,10 +22,10 @@ class ConversionUtil:
         self.dataframe = dataframe
 
         self.config = ConfigUtil.instance()
-        self.sensitive_csv_path = self.config["SENSITIVE"]["sample_dir"]
+        self.sensitive_csv_dir = self.config["SENSITIVE"]["sample_dir"]
         self.sensitive_csv_identifier = self.config["GENERAL"]["name"]
 
-        self.syn_config_path = self.config["SYNTHETIC"]["config_dir"]
+        self.syn_config_dir = self.config["SYNTHETIC"]["config_dir"]
         self.syn_config = {
             "sensitive_microdata_path": "",
             "sensitive_microdata_delimiter": ",",
@@ -37,7 +39,7 @@ class ConversionUtil:
             "oversampling_tries": 10,
             "parallel_jobs": 4,
             "cache_max_size": 10000,
-            "output_dir": "../synthetic",
+            "output_dir": self.config["SYNTHETIC"]["dataset_dir"],
             "prefix": "",
             "report_title": "",
             "report_visuals": {},
@@ -53,13 +55,13 @@ class ConversionUtil:
         self.create_directory("samples")
 
         # Create CSV file
-        self.sensitive_csv_path = self.sensitive_csv_path + self.sensitive_csv_identifier + ".csv"
-        self.dataframe.to_csv(self.sensitive_csv_path)
+        self.sensitive_csv_dir = self.sensitive_csv_dir + self.sensitive_csv_identifier + ".csv"
+        self.dataframe.to_csv(self.sensitive_csv_dir)
 
-        if os.path.isfile(self.sensitive_csv_path):
-            logging.debug("Overwriting existing sample with the same identifier; " + self.sensitive_csv_identifier)
+        if os.path.isfile(self.sensitive_csv_dir):
+            logger.debug("Overwriting existing sample with the same identifier; " + self.sensitive_csv_identifier)
 
-        logging.info("Successful dataframe to CSV conversion; created " + self.sensitive_csv_path)
+        logger.debug("Successful dataframe to CSV conversion; created " + self.sensitive_csv_dir)
 
     def dataframe_to_syn_config(self, synthesis_mode, k):
         """
@@ -71,25 +73,25 @@ class ConversionUtil:
         :return: path to the created JSON file (string)
         """
         self.create_directory("configs")
-        self.syn_config_path = self.syn_config_path + self.sensitive_csv_identifier + ".json"
+        self.syn_config_dir = self.syn_config_dir + self.sensitive_csv_identifier + ".json"
 
         # Set synthesis config fields
-        self.syn_config["sensitive_microdata_path"] = self.sensitive_csv_path
+        self.syn_config["sensitive_microdata_path"] = self.sensitive_csv_dir
         self.syn_config["sensitive_zeros"] = list(self.dataframe.columns.values)
         self.syn_config["reporting_resolution"] = k
         self.syn_config["synthesis_mode"] = synthesis_mode
         self.syn_config["prefix"] = self.sensitive_csv_identifier
 
-        if os.path.isfile(self.syn_config_path):
-            logging.debug("Overwriting existing config with the same identifier; " + self.sensitive_csv_identifier)
+        if os.path.isfile(self.syn_config_dir):
+            logger.debug("Overwriting existing config with the same identifier; " + self.sensitive_csv_identifier)
 
         # Create JSON file
         json_dump = json.dumps(self.syn_config)
-        json_file = open(self.syn_config_path, "w")
+        json_file = open(self.syn_config_dir, "w")
         json_file.write(json_dump)
         json_file.close()
 
-        logging.info("Successful CSV to JSON conversion; created " + self.syn_config_path)
+        logger.debug("Successful CSV to JSON conversion; created " + self.syn_config_dir)
 
     def create_directory(self, directory):
         """
@@ -101,5 +103,5 @@ class ConversionUtil:
         """
         if not os.path.exists(self.config["GENERAL"]["root_dir"] + directory):
             os.makedirs(self.config["GENERAL"]["root_dir"] + directory)
-            logging.debug("Created directory; " + directory)
-        logging.debug("Directory already exists; " + directory)
+            logger.debug("Created directory; " + directory)
+        logger.debug("Directory already exists; " + directory)

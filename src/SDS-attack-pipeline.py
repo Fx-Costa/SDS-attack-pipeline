@@ -6,16 +6,15 @@ from Synthesizers.SDSSynthesizer import SDSSynthesizer
 from Analysers.SensitiveAnalyser import SensitiveAnalyser
 from Attacks.FindKAttack import FindKAttack
 from Utils.ConfigUtil import ConfigUtil
+import os
 
+#logging.getLogger().setLevel(logging.INFO)
 
 def main():
     config = ConfigUtil.instance()
-    if config["LOGGING"]["enabled"]:
-        logging.basicConfig(level=config["LOGGING"]["level"],
-                            format=config["LOGGING"]["format"],
-                            datefmt=config["LOGGING"]["date_format"])
+    os.environ['NUMEXPR_MAX_THREADS'] = config["GENERAL"]["max_threads"]
 
-    # Sample the NIST NATIONAL dataset
+    # Sample the NIST dataset
     n, m, cols = 6, -1, None
     sampler = SamplerUtil()
     sample_df = sampler.sample(n, m, cols)
@@ -31,7 +30,7 @@ def main():
 
     # Perform SDS synthesis using SDSSynthesizer
     synthesizer = SDSSynthesizer()
-    synthesizer.synthesize(verbose=False, aggregate=True, generate=True, evaluate=True)
+    synthesizer.synthesize(aggregate=True, generate=True)
 
     # Perform attack(s); to determine K and create leaks, by data poisoning
     # TODO: perform attack(s) here (FindKAttack / LeakAttack)

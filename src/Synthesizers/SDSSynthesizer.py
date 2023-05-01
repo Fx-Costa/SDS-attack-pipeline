@@ -1,14 +1,18 @@
-import os
-import logging
+import json
 from Utils.ConfigUtil import ConfigUtil
+from Utils.LoggerUtil import LoggerUtil
+from showcase import runForConfig
 
-# TODO: use python code (from python-pipeline/src/) instead of system commandos
+# TODO: use python code (from python_pipeline/src/) instead of system commandos
+
+
+logger = LoggerUtil.instance()
 
 
 class SDSSynthesizer:
     """
     A class for synthesizing sensitive dataset into synthetic dataset using k-anonymity using Microsoft's Synthetic
-    Data Showcase (SDS) python-pipeline.
+    Data Showcase (SDS) python_pipeline.
 
     Methods: synthesize(),
     """
@@ -16,20 +20,21 @@ class SDSSynthesizer:
         """
         Creates an instance of SDSSynthesizer given a path to a synthetic configuration file
         """
-        self.syn_config_filepath = ConfigUtil.instance()["SYNTHETIC"]["config_dir"]
-        self.flags = {"verb": False, "agg": True, "gen": True, "eval": True, "nav": True}
+        self.config = ConfigUtil.instance()
+        self.syn_config_path = self.config["SYNTHETIC"]["config_dir"] + self.config["GENERAL"]["name"] + ".json"
+        self.last_flags = {"nav": True, "eval": True, "gen": True, "agg": True}
+        self.round = 0
 
-    def synthesize(self, verbose=False, aggregate=False, generate=False, evaluate=False, navigate=False):
+    def synthesize(self, aggregate=False, generate=False, evaluate=False, navigate=False):
         """
         Performs synthesis using the syn_config_file and with any keyword arguments:
-        verbose : whether to use verbose output of logs (bool),
         aggregate : whether to aggregate during synthesis (bool),
         generate : whether to generate during synthesis,
         evaluate : whether to evaluate during synthesis,
         navigate : whether to navigate during synthesis,
-        assumes all except verbose if none are given.
+        assumes all by default.
 
-        :param verbose: whether to output synthesis logs
+        :param verbose: whether to include verbose logging
         :param aggregate: whether to perform aggregation step
             (generates protected counts of records [reportable_aggregates])
         :param generate: whether to perform generation step
@@ -40,41 +45,46 @@ class SDSSynthesizer:
             (generates Power BI template from synthetic and aggregate data)
         :return: void
         """
-        # Construct synthesis flags from arguments
-        flags = " --aggregate --generate --evaluate --navigate"
-        if verbose is True:
-            flags = " --verbose" + flags
-            self.flags["verb"] = True
+        # Open and read the synthesis config (json) file
+        file = open(self.syn_config_path)
+        syn_config = json.load(file)
 
+        # Construct synthesis flags from arguments:
         # A current flag can only be set if all prior flags are also set, e.g.:
         # Evaluate can only be set if Generate is set, which in turn, can only be set if Aggregate is set.
+        syn_config["navigate"] = True
+        syn_config["evaluate"] = True
+        syn_config["generate"] = True
+        syn_config["aggregate"] = True
+
         if navigate is False:
-            flags = flags[:-(len(" --navigate"))]
-            self.flags["nav"] = False
+            syn_config["navigate"], self.last_flags["nav"] = False, False
             if evaluate is False:
-                flags = flags[:-(len(" --evaluate"))]
-                self.flags["eval"] = False
+                syn_config["evaluate"], self.last_flags["eval"] = False, False
                 if generate is False:
-                    flags = flags[:-(len(" --generate"))]
-                    self.flags["gen"] = False
+                    syn_config["generate"], self.last_flags["gen"] = False, False
                     if aggregate is False:
-                        flags = flags[:-(len(" --aggregate"))]
-                        self.flags["agg"] = False
+                        syn_config["aggregate"], self.last_flags["agg"] = False, False
+        file.close()
 
         # Perform synthesis with given flags
-        # TODO: generalize this
-        os.system("python ../python-pipeline/src/showcase.py " + "../configs/test.json" + flags)
-        logging.info("Successful synthesis; created " + self.syn_config_filepath)
-        # TODO: using python-pipeline, return or set self to the synthetic dataset path
+        runForConfig(syn_config)
+
+        # Logging
+        self.round += 1
+        if self.round < 2:
+            logger.info("Successful synthesis; created " + self.syn_config_path)
+        else:
+            logger.debug("Successful synthesis (" + str(self.round - 1) + ") ; created " + self.syn_config_path)
 
     def resynthesize(self):
         """
         Performs synthesis with the same flags as the previous synthesis
         :return: void
         """
-        if self.flags is None:
-            logging.info("Unsuccessful re-synthesis; cannot re-synthesize before a synthesis has completed")
+        if self.round < 1:
+            logger.error("Unsuccessful re-synthesis; cannot re-synthesize before a synthesis has completed")
         else:
-            self.synthesize(self.flags["verb"], self.flags["agg"], self.flags["gen"],
-                            self.flags["eval"], self.flags["nav"])
-            logging.info("Successful re-synthesis; created " + self.syn_config_filepath)
+            self.synthesize(self.last_flags["agg"], self.last_flags["gen"],
+                            self.last_flags["eval"], self.last_flags["nav"])
+            logger.debug("Successful re-synthesis; created " + self.syn_config_path)

@@ -1,6 +1,8 @@
 import pandas as pd
-import logging
 from Utils.ConfigUtil import ConfigUtil
+from Utils.LoggerUtil import LoggerUtil
+
+logger = LoggerUtil.instance()
 
 
 class SamplerUtil:
@@ -9,7 +11,6 @@ class SamplerUtil:
 
     Methods: sample(), insert_sample(), insert_samples()
     """
-
     def __init__(self):
         """
         Creates an instance of SamplerUtil
@@ -28,7 +29,7 @@ class SamplerUtil:
         # If m and cols are both given
         # the number of columns in cols must match m
         if m != -1 and cols is not None and m != len(cols):
-            logging.error("Unsuccessful sampling; m = " + str(m) + " must match number of columns in cols = " + str(cols))
+            logger.error("Unsuccessful sampling; m = " + str(m) + " must match number of columns in cols = " + str(cols))
             return
 
         # Full dataframe
@@ -43,13 +44,13 @@ class SamplerUtil:
             try:
                 dataframe = dataframe[cols]
             except KeyError:
-                logging.warning("Invalid input; cols = " + str(cols) + " do not exist in dataset, using all columns")
+                logger.warning("Invalid input; cols = " + str(cols) + " do not exist in dataset, using all columns")
 
         # If n is non-positive; return the empty df
         if n < 1:
-            logging.debug("Empty sampling; n = " + str(n) + " returning an empty df")
+            logger.debug("Empty sampling; n = " + str(n) + " returning an empty df")
             return dataframe
 
-        logging.info("Successful sampling; created n = " + str(n) + " by m = " + str(m) + " sized sample")
+        logger.debug("Successful sampling; created n = " + str(n) + " by m = " + str(m) + " sized sample")
         # return the n random samples
         return dataframe.sample(n)

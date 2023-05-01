@@ -1,7 +1,8 @@
-import logging
 import pandas as pd
+from Utils.LoggerUtil import LoggerUtil
 
 # TODO: right now this analysis is not used for anything, results should be used in attacks
+logger = LoggerUtil.instance()
 
 
 class SensitiveAnalyser:
@@ -85,5 +86,5 @@ class SensitiveAnalyser:
         df = self.determine_ftr_types(df)
         df = self.determine_ftr_ranges(df)
 
-        logging.info("Successful analysis; created dataframe")
+        logger.debug("Successful analysis; created dataframe")
         return df

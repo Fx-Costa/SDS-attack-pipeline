@@ -2,7 +2,9 @@ import pandas as pd
 from Utils.SamplerUtil import SamplerUtil
 from Utils.ConversionUtil import ConversionUtil
 from Utils.ConfigUtil import ConfigUtil
-import logging
+from Utils.LoggerUtil import LoggerUtil
+
+logger = LoggerUtil.instance()
 
 
 class FindKAttack:
@@ -21,15 +23,15 @@ class FindKAttack:
         self.cols = cols
         self.synthesizer = synthesizer
         config = ConfigUtil.instance()
-        self.syn_csv_path = config["SYNTHETIC"]["dataset_path"] + config["GENERAL"]["name"] + "_synthetic_microdata.tsv"
+        self.syn_csv_path = config["SYNTHETIC"]["dataset_dir"] + config["GENERAL"]["name"] + "_synthetic_microdata.tsv"
 
     def find_k(self, upper_bound=10):
         """
         Finds K of a synthetic dataset.
-        Assumes that re-synthesis is possible with identical config.
+        Assumes that re-synthesis is possible with identical config. i.e. the syn_config is known.
         :return:
         """
-        logging.info("Commencing attack; Finding K...")
+        logger.info("Commencing attack; Finding K...")
 
         for k in range(1, upper_bound):
             k_sized_sample = SamplerUtil().sample(n=k, cols=self.cols)
@@ -38,8 +40,8 @@ class FindKAttack:
             synthetic_df = pd.read_csv(self.syn_csv_path)
 
             if not synthetic_df.empty:
-                logging.info("Successful attack; found k = " + str(k))
+                logger.info("Successful attack; found k = " + str(k))
                 return k
 
-        logging.info("Unsuccessful attack; could not determine k within 1 to " + str(upper_bound))
+        logger.info("Unsuccessful attack; could not determine k within 1 to " + str(upper_bound))
         return
