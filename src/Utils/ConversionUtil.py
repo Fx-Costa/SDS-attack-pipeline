@@ -81,6 +81,7 @@ class ConversionUtil:
         self.syn_config["reporting_resolution"] = k
         self.syn_config["synthesis_mode"] = synthesis_mode
         self.syn_config["prefix"] = self.sensitive_csv_identifier
+        self.syn_config["use_columns"] = list(self.dataframe.columns.values)
 
         if os.path.isfile(self.syn_config_dir):
             logger.debug("Overwriting existing config with the same identifier; " + self.sensitive_csv_identifier)

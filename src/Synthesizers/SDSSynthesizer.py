@@ -1,7 +1,7 @@
 import json
 from Utils.ConfigUtil import ConfigUtil
 from Utils.LoggerUtil import LoggerUtil
-from showcase import runForConfig
+from lib.python_pipeline.src.showcase import runForConfig
 
 # TODO: use python code (from python_pipeline/src/) instead of system commandos
 
