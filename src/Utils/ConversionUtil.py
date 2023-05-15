@@ -96,7 +96,7 @@ class ConversionUtil:
 
     def create_directory(self, directory):
         """
-        Creates a directory at project root if the directory does not already exist. Necessary for below methods
+        Creates a directory at project root if the directory does not already exist. Necessary for above methods
         to run as intended if no required directories exist.
 
         :param directory: the name of the directory to create if it does not already exist

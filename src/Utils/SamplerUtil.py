@@ -51,6 +51,7 @@ class SamplerUtil:
             logger.debug("Empty sampling; n = " + str(n) + " returning an empty df")
             return dataframe
 
-        logger.debug("Successful sampling; created n = " + str(n) + " by m = " + str(m) + " sized sample")
+        logger.debug("Successful sampling; created n = " + str(n) + " by m = " + str(m) +
+                     " sized sample, using columns: " + str(list(dataframe.columns)))
         # return the n random samples
         return dataframe.sample(n)

@@ -7,7 +7,7 @@ from Attackers.NaiveAttacker import NaiveAttacker
 
 def main():
     # Sample the NIST dataset
-    n, m, cols = 6, 4, None
+    n, m, cols = 300, 5, None
     sampler = SamplerUtil()
     sample_df = sampler.sample(n, m, cols)
 
@@ -18,16 +18,16 @@ def main():
     # Create a CSV file from sample, and a SDS synthesis config from this CSV file
     converter = ConversionUtil(sample_df)
     converter.dataframe_to_csv()
-    converter.dataframe_to_syn_config("aggregate_seeded", k=3)
+    converter.dataframe_to_syn_config("unseeded", k=3)
 
     # Perform SDS synthesis using SDSSynthesizer
     synthesizer = SDSSynthesizer()
     synthesizer.synthesize(aggregate=True, generate=True)
 
     # Perform attack(s); to determine K and create leaks by data poisoning
-    naive_attacker = NaiveAttacker(sensitive_analysis_df, synthesizer)
+    naive_attacker = NaiveAttacker(sample_df, sensitive_analysis_df, synthesizer)
     #k = naive_attacker.find_k()
-    naive_attacker.leak(3, "AGEP")
+    naive_attacker.leak(k=3, target_index=0, sensitive_col="HISP")
 
     # Perform final analysis using SyntheticAnalyser to determine properties of the synthetic (poisoned) dataset
     # TODO: perform analysis here (SyntheticAnalyser)

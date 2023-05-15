@@ -15,13 +15,15 @@ class NaiveAttacker:
     Methods: inject(), find_k(), leak()
     """
 
-    def __init__(self, sensitive_analysis_df, synthesizer):
+    def __init__(self, sensitive_dataset_df, sensitive_analysis_df, synthesizer):
         """
         Creates an instance of NaiveAttacker
 
-        :param cols: a list of column names (strings)
+        :param sensitive_dataset_df: the sensitive dataset pandas dataframe
+        :param sensitive_analysis_df: a pandas dataframe as a result of a sensitive analysis
         :param synthesizer: a synthesizer object
         """
+        self.sensitive_dataset_df = sensitive_dataset_df
         self.sensitive_analysis_df = sensitive_analysis_df
         self.cols = self.sensitive_analysis_df.columns
         self.synthesizer = synthesizer
@@ -39,6 +41,9 @@ class NaiveAttacker:
         dataframe.to_csv(self.config["SENSITIVE"]["sample_dir"] + self.config["GENERAL"]["name"] + ".csv", mode='a',
                          header=False)
         logger.debug("Performed injection; Appended " + str(dataframe.shape[0]) + " rows to sensitive dataset")
+
+    def determine_targets(self):
+        pass
 
     def find_k(self, upper_bound=10):
         """
@@ -65,21 +70,40 @@ class NaiveAttacker:
         logger.info("Unsuccessful attack; could not determine k within 1 to " + str(upper_bound))
         return
 
-    def leak(self, k, target_column):
-        print(self.sensitive_analysis_df)
+    def leak(self, k, target_index, sensitive_col):
+        logger.info("Commencing attack; Injecting poisoned data, target_index=" + str(target_index) + "...")
 
-        # Get sensitive dataset properties used to later determine injections
-        type = self.sensitive_analysis_df[target_column]["type"]
+        # Get target's sensitive data (except the sensitive_col; i.e. the unknown sensitive feature we wish to leak)
+        target_data = self.sensitive_dataset_df.iloc[target_index].drop(sensitive_col, axis=0)
 
-        # Construct k injections (rows)
-        #TODO: determine appropriate values to inject
-        row = np.array([0, 0, 0, 0])
-        injection = np.tile(row, (k, 1))
+        # Get the data types identified during the sensitive analysis
+        sensitive_analysis_df_types = self.sensitive_analysis_df.loc["type"]
 
-        # Create injection index labels; i0, i1, ..., ik
-        index = ['i{}'.format(i) for i in range(k)]
+        # Construct the payload
+        payload = {}
+        for index in target_data.index:
+            # Get the data type of 'column' from sensitive_analysis_df_types
+            data_type = sensitive_analysis_df_types[index]
+
+            if data_type == np.dtype(np.object):
+                # If the data type is object, no casting is required
+                payload[index] = target_data[index]
+            else:
+                # Cast values from target_data to the data type and insert into payload
+                casted_values = target_data[index].astype(data_type).tolist()
+                payload[index] = casted_values
+
+        # Create a dataframe from the payload repeated k times
+        payload_df = pd.DataFrame([payload])
+        payload_df = pd.concat([payload_df] * (k - 1), ignore_index=True)
+
+        # Create injection labels; i0, ..., ik
+        payload_df.rename(index=lambda i: f'i{i}', inplace=True)
 
         # Perform injection into sensitive dataset
-        self.inject(pd.DataFrame(injection, index=index, columns=self.sensitive_analysis_df.columns))
+        self.inject(pd.DataFrame(payload_df, columns=self.sensitive_analysis_df.columns))
 
-        # Perform resynthesization
+        # Perform resynthesization of sensitive dataset
+        self.synthesizer.resynthesize()
+
+        #TODO: Should apply a brute-force to the sensitive (unknown) column/feature

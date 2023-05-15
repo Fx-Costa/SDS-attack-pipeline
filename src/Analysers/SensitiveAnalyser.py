@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from Utils.LoggerUtil import LoggerUtil
 
@@ -45,7 +46,11 @@ class SensitiveAnalyser:
         # Construct the dataframe with conclusive type labels
         for col in self.conclusive.columns:
             # Set the value of the "type" row for the column to its data type
-            dataframe.loc["type", col] = str(self.conclusive[col].dtype)
+            dataframe.loc["type", col] = self.conclusive[col].dtype
+
+        # Include inconclusive type labels; labeled as strings
+        for col in self.inconclusive.columns:
+            dataframe.loc["type", col] = np.dtype(np.object)
 
         return dataframe
 
@@ -66,8 +71,8 @@ class SensitiveAnalyser:
         binary_columns = ranges.columns[ranges.loc['diff'] == 1]
 
         # Construct the dataframe with type labels, min, max and average values per column
-        dataframe.loc["type", constant_columns] = "constant"
-        dataframe.loc["type", binary_columns] = "binary"
+        dataframe.loc["note", constant_columns] = "constant"
+        dataframe.loc["note", binary_columns] = "binary"
         ranges.loc["avg"] = ranges.mean(axis=0)
 
         return pd.concat([dataframe, ranges.drop("diff")])

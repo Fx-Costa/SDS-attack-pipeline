@@ -3,9 +3,6 @@ from Utils.ConfigUtil import ConfigUtil
 from Utils.LoggerUtil import LoggerUtil
 from lib.python_pipeline.src.showcase import runForConfig
 
-# TODO: use python code (from python_pipeline/src/) instead of system commandos
-
-
 logger = LoggerUtil.instance()
 
 
@@ -22,6 +19,7 @@ class SDSSynthesizer:
         """
         self.config = ConfigUtil.instance()
         self.syn_config_path = self.config["SYNTHETIC"]["config_dir"] + self.config["GENERAL"]["name"] + ".json"
+        self.dataset_dir = self.config["SYNTHETIC"]["dataset_dir"]
         self.last_flags = {"nav": True, "eval": True, "gen": True, "agg": True}
         self.round = 0
 
@@ -34,7 +32,6 @@ class SDSSynthesizer:
         navigate : whether to navigate during synthesis,
         assumes all by default.
 
-        :param verbose: whether to include verbose logging
         :param aggregate: whether to perform aggregation step
             (generates protected counts of records [reportable_aggregates])
         :param generate: whether to perform generation step
@@ -46,7 +43,7 @@ class SDSSynthesizer:
         :return: void
         """
         # Open and read the synthesis config (json) file
-        file = open(self.syn_config_path)
+        file = open(self.syn_config_path, "r+")
         syn_config = json.load(file)
 
         # Construct synthesis flags from arguments:
@@ -65,21 +62,29 @@ class SDSSynthesizer:
                     syn_config["generate"], self.last_flags["gen"] = False, False
                     if aggregate is False:
                         syn_config["aggregate"], self.last_flags["agg"] = False, False
+
+        # Determine, based on 'round', if current synthesis is a re-synthesis or not - for logging and output prefix
+        self.round += 1
+        if self.round < 2:
+            logger.info("Successful synthesis; created synthetic dataset at: " + self.dataset_dir +
+                        syn_config["prefix"] + ".tsv")
+        else:
+            # If the round > 1, we must be performing re-synthesis, hence change the prefix in the synthesis config,
+            # to avoid overwriting previous synthetic datasets
+            syn_config["prefix"] = syn_config["prefix"] + str(self.round - 1)
+            logger.debug("Successful re-synthesis (" + str(self.round - 1) + "); created synthetic dataset at: " +
+                         self.dataset_dir + syn_config["prefix"] + ".tsv")
+
         file.close()
 
         # Perform synthesis with given flags
         runForConfig(syn_config)
 
-        # Logging
-        self.round += 1
-        if self.round < 2:
-            logger.info("Successful synthesis; created " + self.syn_config_path)
-        else:
-            logger.debug("Successful synthesis (" + str(self.round - 1) + ") ; created " + self.syn_config_path)
-
     def resynthesize(self):
         """
-        Performs synthesis with the same flags as the previous synthesis
+        Performs synthesis with the same flags as the previous synthesis, generating a new config in the process.
+        The new config file's name will be appended the round number.
+
         :return: void
         """
         if self.round < 1:
@@ -87,4 +92,3 @@ class SDSSynthesizer:
         else:
             self.synthesize(self.last_flags["agg"], self.last_flags["gen"],
                             self.last_flags["eval"], self.last_flags["nav"])
-            logger.debug("Successful re-synthesis; created " + self.syn_config_path)
