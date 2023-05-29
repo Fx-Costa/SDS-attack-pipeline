@@ -96,4 +96,4 @@ def plotStats(
         plt.tight_layout()
         fig.savefig(stats_svg)
         plt.figure().clear()
-        plt.close()
+        plt.close("all")

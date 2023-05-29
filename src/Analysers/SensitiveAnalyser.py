@@ -39,10 +39,6 @@ class SensitiveAnalyser:
         self.conclusive = self.dataframe.select_dtypes(exclude=["object"])
         self.inconclusive = self.dataframe.select_dtypes(include=["object"])
 
-        # TODO: further analysis here. conclusive types are sometimes mistaken.
-        #  for instance MSP could be int64 rather than float64
-        # TODO: How to handle inconclusive dtypes, such as PUMA. Do we need a parser ?
-
         # Construct the dataframe with conclusive type labels
         for col in self.conclusive.columns:
             # Set the value of the "type" row for the column to its data type
@@ -57,25 +53,29 @@ class SensitiveAnalyser:
     def determine_ftr_ranges(self, dataframe):
         """
         Determines ranges of feature values, i.e. what range of values each entry takes on per column.
-        May change datatype label where the range can be narrowed down. E.g. in cases where features have a constant
+        May insert note where a range can be narrowed down. E.g. in cases where features have a constant
         and/or binary range of values.
 
         :return: pandas dataframe
         """
         # Determine ranges of values of conclusively typed columns
         ranges = self.conclusive.agg(['min', 'max'])
-        ranges.loc["diff"] = ranges.loc['max'] - ranges.loc['min']
+        #ranges.loc["diff"] = ranges.loc['max'] - ranges.loc['min']
 
-        # Determine constant and binary columns
-        constant_columns = ranges.columns[ranges.loc['diff'] == 0]
-        binary_columns = ranges.columns[ranges.loc['diff'] == 1]
+        # Determine if range includes NaN values
+        nan_columns = self.dataframe.columns[self.dataframe.isna().any()]
+        dataframe.loc["NaN", nan_columns] = True
+        dataframe.loc["NaN", ~self.dataframe.columns.isin(nan_columns)] = False
 
-        # Construct the dataframe with type labels, min, max and average values per column
-        dataframe.loc["note", constant_columns] = "constant"
-        dataframe.loc["note", binary_columns] = "binary"
-        ranges.loc["avg"] = ranges.mean(axis=0)
+        # Determine constant and binary columns, add the tag to the note row in the df
+        #constant_columns = ranges.columns[ranges.loc['diff'] == 0]
+        #binary_columns = ranges.columns[ranges.loc['diff'] == 1]
+        #dataframe.loc["note", constant_columns] = "constant"
+        #dataframe.loc["note", binary_columns] = "binary"
 
-        return pd.concat([dataframe, ranges.drop("diff")])
+
+
+        return pd.concat([dataframe, ranges])
 
     def analyse(self):
         """
