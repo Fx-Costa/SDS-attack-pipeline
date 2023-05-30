@@ -3,6 +3,7 @@ from Utils.ConfigUtil import ConfigUtil
 from Utils.LoggerUtil import LoggerUtil
 
 logger = LoggerUtil.instance()
+config = ConfigUtil.instance()
 
 
 class SamplerUtil:
@@ -13,45 +14,39 @@ class SamplerUtil:
     """
     def __init__(self):
         """
-        Creates an instance of SamplerUtil
+        Initializes an instance of SamplerUtil.
         """
-        self.dataset_path = ConfigUtil.instance()["SENSITIVE"]["dataset_path"]
+        self.dataset_path = config["SENSITIVE"]["dataset_path"]
 
     def sample(self, n=1, m=-1, cols=None):
         """
-        Samples the dataset given by dataset_path n times
+        Creates CSV file given a pandas dataframe in the corresponding directory at root by overwriting.
 
-        :param n: the number of samples (int) defaults to 1
-        :param m: the number of columns in samples (int) defaults to all
-        :param cols: the specific columns in samples (a list of strings) defaults to none
-        :return: an n by m, or n by cols (if given cols) sized pandas dataframe
+        :param n: integer
+        :param m: integer
+        :param cols: list of strings
         """
-        # If m and cols are both given
-        # the number of columns in cols must match m
+        # If m and cols are both given the number of columns in cols must match m
         if m != -1 and cols is not None and m != len(cols):
-            logger.error("Unsuccessful sampling; m = " + str(m) + " must match number of columns in cols = " + str(cols))
-            return
+            raise ValueError("m=" + str(m) + " must match the number of columns in cols=" + str(len(cols)))
+        if n < 1 or not isinstance(n, int):
+            raise ValueError("n=" + str(n) + " must be a positive integer")
 
-        # Full dataframe
-        dataframe = pd.read_csv(self.dataset_path, na_values='N')
-        dataframe.index.name = "ID"
+        # Read the sensitive dataset
+        sensitive_dataset = pd.read_csv(self.dataset_path, na_values='N')
+        sensitive_dataset.index.name = "ID"
 
-        # Dropping columns based on m and/or cols
-        if m > 0 and cols is None:    # If only m is given
-            # Drop all columns not in [0, m]
-            dataframe = dataframe.drop(dataframe.iloc[:, m:len(dataframe.columns)], axis=1)
-        elif cols is not None:    # If cols is given
-            try:
-                dataframe = dataframe[cols]
-            except KeyError:
-                logger.warning("Invalid input; cols = " + str(cols) + " do not exist in dataset, using all columns")
+        # Drop columns not in within 0 to m, if cols is not given
+        if m != -1 and cols is None:
+            # Drop columns with indices not in [0, m]
+            sensitive_dataset = sensitive_dataset.drop(
+                sensitive_dataset.iloc[:, m:len(sensitive_dataset.columns)],
+                axis=1
+            )
+        elif cols is not None:
+            # Include only columns that appear in cols
+            sensitive_dataset = sensitive_dataset[cols]
 
-        # If n is non-positive; return the empty df
-        if n < 1:
-            logger.debug("Empty sampling; n = " + str(n) + " returning an empty df")
-            return dataframe
-
-        logger.debug("Successful sampling; created n = " + str(n) + " by m = " + str(m) +
-                     " sized sample, using columns: " + str(list(dataframe.columns)))
-        # return the n random samples
-        return dataframe.sample(n)
+        logger.debug("Created sample; n = " + str(n) + " by m = " + str(m) + ", columns: " +
+                     str(list(sensitive_dataset.columns)))
+        return sensitive_dataset.sample(n)

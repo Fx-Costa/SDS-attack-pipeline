@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
-from Utils.SamplerUtil import SamplerUtil
-from Utils.ConversionUtil import ConversionUtil
-from Utils.ConfigUtil import ConfigUtil
 from Utils.LoggerUtil import LoggerUtil
-from Analysers.SyntheticAnalyser import SyntheticAnalyser
+from Analyzers.SyntheticAnalyzer import SyntheticAnalyzer
+from File.SyntheticDatasetFile import SyntheticDatasetFile
+from File.SensitiveDatasetFile import SensitiveDatasetFile
+from Synthesizers.SDSSynthesizerFacade import SDSSynthesizerFacade
 
 logger = LoggerUtil.instance()
 
@@ -12,41 +12,29 @@ logger = LoggerUtil.instance()
 class NaiveAttacker:
     """
     A class for naive attacks on a SDS synthesized dataset
-
-    Methods: inject(), find_k(), leak()
     """
 
-    def __init__(self, sensitive_dataset_df, sensitive_analysis_df, synthesizer):
-        """
-        Creates an instance of NaiveAttacker
-
-        :param sensitive_dataset_df: the sensitive dataset pandas dataframe
-        :param sensitive_analysis_df: a pandas dataframe as a result of a sensitive analysis
-        :param synthesizer: a synthesizer object
-        """
-        self.sensitive_dataset_df = sensitive_dataset_df
-        self.sensitive_analysis_df = sensitive_analysis_df
-        self.cols = self.sensitive_analysis_df.columns
+    def __init__(self, sensitive_dataset_file: SensitiveDatasetFile, synthetic_dataset_file: SyntheticDatasetFile,
+                 sensitive_analysis: pd.DataFrame, synthesizer: SDSSynthesizerFacade):
+        self.sensitive_dataset_file = sensitive_dataset_file
+        self.synthetic_dataset_file = synthetic_dataset_file
+        self.sensitive_analysis = sensitive_analysis
         self.synthesizer = synthesizer
-        self.config = ConfigUtil.instance()
-        self.syn_csv_path = self.config["SYNTHETIC"]["dataset_dir"] + self.config["GENERAL"]["name"] \
-            + "_synthetic_microdata.tsv"
 
-    def inject(self, dataframe):
+    def __inject(self, data):
         """
-        Injects a Pandas dataframe into the sensitive dataset (often a sample) by appending to it
+        Injects dataframe into the sensitive dataset by writing to the sensitive dataset (always appends), and returns
+            number of rows injected.
 
-        :param dataframe: a pandas dataframe to 'inject' (append) to the sensitive dataset
-        :return: void
+        :param data: dataframe
+        :return: integer
         """
-        dataframe.to_csv(self.config["SENSITIVE"]["sample_dir"] + self.config["GENERAL"]["name"] + ".csv",
-                         mode='a', header=False)
-        logger.debug("Performed injection; Appended " + str(dataframe.shape[0]) + " rows to sensitive dataset")
-        return dataframe.shape[0]
+        self.sensitive_dataset_file.write(data, include_header=False)
+        return data.shape[0]
 
-    def construct_payload(self, known_data, sensitive_col, value, repetitions):
+    def __construct_payload(self, known_data, sensitive_col, value, repetitions):
         # Get properties identified in the sensitive dataset during the sensitive analysis
-        data_types = self.sensitive_analysis_df.loc["type"]
+        data_types = self.sensitive_analysis.loc["type"]
 
         payload = {}
         for index in known_data.index:
@@ -81,8 +69,8 @@ class NaiveAttacker:
         logger.info("Commencing attack; Injecting poisoned data to find K...")
 
         # Get properties of the sensitive column found during the SensitiveAnalysis
-        data_type = self.sensitive_analysis_df.at["type", sensitive_col]
-        minimum = self.sensitive_analysis_df.at["min", sensitive_col]
+        data_type = self.sensitive_analysis.at["type", sensitive_col]
+        minimum = self.sensitive_analysis.at["min", sensitive_col]
         val_outside_domain = np.dtype(data_type).type(minimum) - 1
 
         # Accumulators and flags used to identify leaks and thresholds
@@ -93,14 +81,14 @@ class NaiveAttacker:
         while not is_leaked:
             # Construct a payload with NaN values to not interfere.
             # Inject it into the dataset and keep track of the number of injections
-            payload = self.construct_payload(known_data, sensitive_col, val_outside_domain, 1)
-            injection_count += self.inject(pd.DataFrame(payload, columns=self.sensitive_analysis_df.columns))
+            payload = self.__construct_payload(known_data, sensitive_col, val_outside_domain, 1)
+            injection_count += self.__inject(pd.DataFrame(payload, columns=self.sensitive_analysis.columns))
 
             # Apply synthesis
             self.synthesizer.resynthesize()
 
             # Analyze the synthesized dataset using the SyntheticAnalyser to determine if a leak of the payload occurred
-            is_leaked = SyntheticAnalyser().determine_leak(payload)
+            is_leaked = SyntheticAnalyzer(self.synthetic_dataset_file).analyze(payload)
 
         # The value of k is the number of identical injections that resulted in a leak
         logger.info("Successful attack; found K=" + str(injection_count))
@@ -110,10 +98,9 @@ class NaiveAttacker:
         logger.info("Commencing attack; Injecting poisoned data to find sensitive value(s)...")
 
         # Get properties of the sensitive column found during the SensitiveAnalysis
-        data_type = self.sensitive_analysis_df.at["type", sensitive_col]
-        is_nan = self.sensitive_analysis_df.at["NaN", sensitive_col]
-        minimum = self.sensitive_analysis_df.at["min", sensitive_col]
-        maximum = self.sensitive_analysis_df.at["max", sensitive_col]
+        data_type = self.sensitive_analysis.at["type", sensitive_col]
+        minimum = self.sensitive_analysis.at["min", sensitive_col]
+        maximum = self.sensitive_analysis.at["max", sensitive_col]
         minimum = np.dtype(data_type).type(minimum)
         maximum = np.dtype(data_type).type(maximum)
 
@@ -126,14 +113,14 @@ class NaiveAttacker:
         for potential_sensitive_value in sensitive_range:
             # Construct a payload with potential value (we use minimum as the accumulator)
             # Inject it into the dataset, the injection_count will always increment by k
-            payload = self.construct_payload(known_data, sensitive_col, potential_sensitive_value, k - 1)
-            self.inject(pd.DataFrame(payload, columns=self.sensitive_analysis_df.columns))
+            payload = self.__construct_payload(known_data, sensitive_col, potential_sensitive_value, k - 1)
+            self.__inject(pd.DataFrame(payload, columns=self.sensitive_analysis.columns))
 
             # Apply synthesis
             self.synthesizer.resynthesize()
 
             # Analyze the synthesized dataset using the SyntheticAnalyser to determine if a leak of the payload occurred
-            is_leaked = SyntheticAnalyser().determine_leak(payload)
+            is_leaked = SyntheticAnalyzer(self.synthetic_dataset_file).analyze(payload)
 
             # If the payload resulted in a leak, add the guessed sensitive value to the result
             if is_leaked:
@@ -148,7 +135,7 @@ class NaiveAttacker:
 
     def attack_loop(self, sensitive_col):
         # We simulate the known data by taking the data from the first row, i.e. the target is the first row.
-        known_data = self.sensitive_dataset_df.iloc[0]
+        known_data = self.sensitive_dataset_file.read().iloc[0]
         logger.info("Starting attack_loop; sensitive_col=" + sensitive_col + ", known data of target: " +
                     str(dict(known_data.drop(sensitive_col, axis=0))))
 
