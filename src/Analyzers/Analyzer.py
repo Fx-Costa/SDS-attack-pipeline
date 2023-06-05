@@ -21,7 +21,7 @@ class Analyzer(ABC):
         self.__file = file
 
     @property
-    def get_file(self):
+    def _get_file(self):
         """
         Getter for file.
 

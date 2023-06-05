@@ -47,6 +47,10 @@ class NaiveAttacker:
                 # Insert a guess for the sensitive attribute
                 payload[sensitive_col] = value
                 continue
+            elif known_data[index] == "N":
+                # If we are using only QIs the value "N" indicates that the value for this column should not be included
+                payload[index] = np.NaN
+                continue
 
             if data_type == np.dtype(np.object):
                 # If the data type is object, no casting is required
@@ -133,11 +137,29 @@ class NaiveAttacker:
         logger.info("Successful attack; found sensitive value(s): " + str(potential_sensitive_values))
         return potential_sensitive_values
 
-    def attack_loop(self, sensitive_col):
+    def attack_loop(self, sensitive_col, known_cols=None):
+        # Assure that the sensitive_col is an incremental type
+        sensitive_type = self.sensitive_analysis[sensitive_col].loc["type"]
+        if sensitive_type == np.object:
+            logger.error("Failed to run attack_loop; sensitive_col=" + sensitive_col + " is of an invalid type")
+            return
+
         # We simulate the known data by taking the data from the first row, i.e. the target is the first row.
-        known_data = self.sensitive_dataset_file.read().iloc[0]
+        if known_cols is None:
+            # We use all non-sensitive columns (the sensitive column is discarded later)
+            known_data = self.sensitive_dataset_file.read().iloc[0]
+        else:
+            # We use all data on known columns (intended to be the QIs)
+            target_data = self.sensitive_dataset_file.read().iloc[0]
+
+            # Get and modify the values on the unknown columns to NaN
+            unknown_cols = [col for col in target_data.index if col not in known_cols and col != sensitive_col]
+            target_data.loc[unknown_cols] = "N"
+
+            known_data = pd.Series(target_data)
+
         logger.info("Starting attack_loop; sensitive_col=" + sensitive_col + ", known data of target: " +
-                    str(dict(known_data.drop(sensitive_col, axis=0))))
+                        str(dict(known_data.drop(sensitive_col, axis=0))))
 
         # Determine K and potential sensitive values
         k = self.determine_k(sensitive_col, known_data)
@@ -151,6 +173,6 @@ class NaiveAttacker:
 
         logger.info("Completed attack_loop; found K=" + str(k) + " and sensitive value(s): " +
                     str(sensitive_values) + ", implying a " + str(certainty) + "% certainty." +
-                    " Leaked " + str(num_potential_sensitive_values - 1) + " other entries during the bruteforce.")
+                    " Leaked " + str(num_potential_sensitive_values - 1) + " other entries during the attack.")
 
         return sensitive_values, k

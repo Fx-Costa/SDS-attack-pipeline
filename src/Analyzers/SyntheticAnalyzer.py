@@ -19,7 +19,7 @@ class SyntheticAnalyzer(Analyzer):
         :return: boolean
         """
         # Read the synthetic dataset
-        synthetic_dataset = self.get_file.read(is_resynthesis=True)
+        synthetic_dataset = self._get_file.read(is_resynthesis=True)
 
         # Check if the full row exists in the synthetic dataset
         exists = synthetic_dataset.apply(lambda row: row.equals(payload_data), axis=1).any()

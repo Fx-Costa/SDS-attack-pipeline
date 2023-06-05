@@ -1,3 +1,6 @@
+import numpy as np
+import pandas as pd
+
 from File.SensitiveDatasetFile import SensitiveDatasetFile
 from File.SynthesisConfigFile import SynthesisConfigFile
 from Utils.SamplerUtil import SamplerUtil
@@ -13,7 +16,7 @@ def main():
     synthetic_dataset_file = SyntheticDatasetFile()
 
     # Create sensitive dataset
-    sample = SamplerUtil().sample(n=6, m=5, cols=None)
+    sample = SamplerUtil().sample(n=4, m=5, cols=None)
     sensitive_dataset_file.write(sample)
 
     # Perform analysis on the sensitive dataset to determine properties
@@ -21,7 +24,7 @@ def main():
 
     # Create synthesis configuration
     synthesis_config_file = SynthesisConfigFile(sensitive_dataset_file, synthetic_dataset_file)
-    synthesis_config_file.write({"reporting_resolution": 3, "synthesis_mode": "value_seeded"})
+    synthesis_config_file.write({"reporting_resolution": 2, "synthesis_mode": "row_seeded"})
 
     # Create synthetic dataset
     synthesizer = SDSSynthesizerFacade(synthesis_config_file)
@@ -29,7 +32,7 @@ def main():
 
     # Perform attack-loop to bruteforce k and the sensitive value by data poisoning
     naive_attacker = NaiveAttacker(sensitive_dataset_file, synthetic_dataset_file, sensitive_analysis, synthesizer)
-    naive_attacker.attack_loop(sensitive_col="MSP")
+    naive_attacker.attack_loop(sensitive_col="AGEP", known_cols=["PUMA", "MSP"])
 
 
 if __name__ == '__main__':
