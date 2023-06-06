@@ -101,6 +101,11 @@ class NaiveAttacker:
     def determine_sensitive_value(self, sensitive_col, known_data, k):
         logger.info("Commencing attack; Injecting poisoned data to find sensitive value(s)...")
 
+        # Ensure that k > 1 - otherwise the sensitive value should already be leaked
+        if k < 2:
+            logger.warn("Potential error; Found K=" + str(k) + ", the sensitive value should already be leaked...")
+            return []
+
         # Get properties of the sensitive column found during the SensitiveAnalysis
         data_type = self.sensitive_analysis.at["type", sensitive_col]
         minimum = self.sensitive_analysis.at["min", sensitive_col]
