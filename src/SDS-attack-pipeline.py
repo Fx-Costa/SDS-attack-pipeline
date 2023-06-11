@@ -13,7 +13,7 @@ def main(n, m, k, sensitive_attribute, known_attributes):
     synthetic_dataset_file = SyntheticDatasetFile()
 
     # Create sensitive dataset
-    sample = SamplerUtil().sample(n=4, m=5, cols=None)
+    sample = SamplerUtil().sample(n=n, m=m, cols=None)
     sensitive_dataset_file.write(sample)
 
     # Perform analysis on the sensitive dataset to determine properties
@@ -21,7 +21,7 @@ def main(n, m, k, sensitive_attribute, known_attributes):
 
     # Create synthesis configuration
     synthesis_config_file = SynthesisConfigFile(sensitive_dataset_file, synthetic_dataset_file)
-    synthesis_config_file.write({"reporting_resolution": 2, "synthesis_mode": "row_seeded"})
+    synthesis_config_file.write({"reporting_resolution": k, "synthesis_mode": "row_seeded"})
 
     # Create synthetic dataset
     synthesizer = SDSSynthesizerFacade(synthesis_config_file)
@@ -29,9 +29,14 @@ def main(n, m, k, sensitive_attribute, known_attributes):
 
     # Perform attack-loop to bruteforce k and the sensitive value by data poisoning
     naive_attacker = NaiveAttacker(sensitive_dataset_file, synthetic_dataset_file, sensitive_analysis, synthesizer)
-    naive_attacker.attack_loop(sensitive_col="AGEP", known_cols=["PUMA", "MSP"])
+    naive_attacker.attack_loop(sensitive_col=sensitive_attribute, known_cols=known_attributes)
 
 
 if __name__ == '__main__':
-
-    main()
+    n_input = int(input("Enter number of rows (int):"))
+    m_input= int(input("Enter number of columns (int):"))
+    k_input = int(input("Enter privacy resolution (k) (int):"))
+    sensitive_attribute_input = input("Enter name of sensitive attribute:")
+    known_attributes_input = input("Enter name of known attributes separated by spaces:")
+    known_attributes = known_attributes_input.split()
+    main(n_input, m_input, k_input, sensitive_attribute_input, known_attributes)
