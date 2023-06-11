@@ -1,10 +1,8 @@
-import os
 from abc import ABC, abstractmethod
-from os.path import isfile
-from os import makedirs
-from Utils.LoggerUtil import LoggerUtil
-from Utils.ConfigUtil import ConfigUtil
-from File.File import File
+from src.Utils.LoggerUtil import LoggerUtil
+from src.Utils.ConfigUtil import ConfigUtil
+from src.File.File import File
+
 logger = LoggerUtil.instance()
 config = ConfigUtil.instance()
 

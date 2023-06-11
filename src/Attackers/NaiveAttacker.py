@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
-from Utils.LoggerUtil import LoggerUtil
-from Analyzers.SyntheticAnalyzer import SyntheticAnalyzer
-from File.SyntheticDatasetFile import SyntheticDatasetFile
-from File.SensitiveDatasetFile import SensitiveDatasetFile
-from Synthesizers.SDSSynthesizerFacade import SDSSynthesizerFacade
+from src.Utils.LoggerUtil import LoggerUtil
+from src.Analyzers.SyntheticAnalyzer import SyntheticAnalyzer
+from src.File.SyntheticDatasetFile import SyntheticDatasetFile
+from src.File.SensitiveDatasetFile import SensitiveDatasetFile
+from src.Synthesizers.SDSSynthesizerFacade import SDSSynthesizerFacade
 
 logger = LoggerUtil.instance()
 
@@ -33,6 +33,16 @@ class NaiveAttacker:
         return data.shape[0]
 
     def __construct_payload(self, known_data, sensitive_col, value, repetitions):
+        """
+        A method for constructing payloads for later injection based on known_data and a potential value.
+        The payload is repeated repitition number of times before returning the complete dataframe.
+
+        :param known_data: series
+        :param sensitive_col: string
+        :param value: numerical
+        :param repetitions: int
+        :return: dataframe
+        """
         # Get properties identified in the sensitive dataset during the sensitive analysis
         data_types = self.sensitive_analysis.loc["type"]
 
@@ -70,6 +80,13 @@ class NaiveAttacker:
         return payload_df
 
     def determine_k(self, sensitive_col, known_data):
+        """
+        A method for determining k (the privacy resolution) used by the underlying synthesizer to synthesize a dataset.
+
+        :param sensitive_col: string
+        :param known_data: series
+        :return: int
+        """
         logger.info("Commencing attack; Injecting poisoned data to find K...")
 
         # Get properties of the sensitive column found during the SensitiveAnalysis
@@ -99,6 +116,14 @@ class NaiveAttacker:
         return injection_count
 
     def determine_sensitive_value(self, sensitive_col, known_data, k):
+        """
+        A method for determining the sensitive value of the target record, given k and the sensitive attribute.
+
+        :param sensitive_col: string
+        :param known_data: series
+        :param k: int
+        :return: list of object
+        """
         logger.info("Commencing attack; Injecting poisoned data to find sensitive value(s)...")
 
         # Ensure that k > 1 - otherwise the sensitive value should already be leaked
@@ -143,14 +168,22 @@ class NaiveAttacker:
         return potential_sensitive_values
 
     def attack_loop(self, sensitive_col, known_cols=None):
+        """
+        A method that combines preperation, determination of k, construction of payloads and determination of the
+            sensitive attribute. Given a sensitive attribute and the known columns, conducts the bruteforce attack to
+            find the sensitive value of a targeted record.
+
+        :param sensitive_col:
+        :param known_cols:
+        :return:
+        """
         # Assure that the sensitive_col is an incremental type
         sensitive_type = self.sensitive_analysis[sensitive_col].loc["type"]
         if sensitive_type == np.object:
             logger.error("Failed to run attack_loop; sensitive_col=" + sensitive_col + " is of an invalid type")
             return
 
-        # We simulate the known data by taking the data from the first row, i.e. the target is the first row.
-        if known_cols is None:
+        if known_cols is None or len(known_cols) == len(self.sensitive_analysis.columns):
             # We use all non-sensitive columns (the sensitive column is discarded later)
             known_data = self.sensitive_dataset_file.read().iloc[0]
         else:

@@ -1,6 +1,3 @@
-import numpy as np
-import pandas as pd
-
 from File.SensitiveDatasetFile import SensitiveDatasetFile
 from File.SynthesisConfigFile import SynthesisConfigFile
 from Utils.SamplerUtil import SamplerUtil
@@ -10,7 +7,7 @@ from Synthesizers.SDSSynthesizerFacade import SDSSynthesizerFacade
 from Attackers.NaiveAttacker import NaiveAttacker
 
 
-def main():
+def main(n, m, k, sensitive_attribute, known_attributes):
     # Create the file objects (generates directories and files at root)
     sensitive_dataset_file = SensitiveDatasetFile()
     synthetic_dataset_file = SyntheticDatasetFile()
@@ -36,4 +33,5 @@ def main():
 
 
 if __name__ == '__main__':
+
     main()

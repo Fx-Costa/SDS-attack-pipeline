@@ -1,9 +1,7 @@
-import json
-from Utils.ConfigUtil import ConfigUtil
-from Utils.LoggerUtil import LoggerUtil
+from src.Utils.ConfigUtil import ConfigUtil
+from src.Utils.LoggerUtil import LoggerUtil
 from lib.python_pipeline.src.showcase import runForConfig
-from File.SyntheticDatasetFile import SyntheticDatasetFile
-from File.SynthesisConfigFile import SynthesisConfigFile
+from src.File.SynthesisConfigFile import SynthesisConfigFile
 
 logger = LoggerUtil.instance()
 config = ConfigUtil.instance()
