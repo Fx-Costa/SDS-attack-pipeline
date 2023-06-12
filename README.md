@@ -29,7 +29,7 @@ A Python pipeline tool for analysis and attacks (data poisoning) on the SDS (k-a
   -  `sensitive_attribute` - the name of the sensitive attribute (must be in the _m_ columns).
   - `known_attributes` - the name(s) of the known attributes seperated by spaces (optional) (must be in the _m_ columns).
 
-When `known_attributes` is not given, the attack will assume knowledge of all non-sensitve attrbites.
+When `known_attributes` is not given, the attack will assume knowledge of all non-sensitve attributes.
 
 Directories and files will be generated at the project root; `/SensitiveDataset`, `/SynthesisConfig` and `/SyntheticDataset` carrying the corresponding files.
 
