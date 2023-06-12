@@ -1,6 +1,0 @@
-# dependencies
-pandas
-matplotlib
-seaborn
-psutil
-joblib

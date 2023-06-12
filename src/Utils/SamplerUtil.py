@@ -1,6 +1,6 @@
 import pandas as pd
-from src.Utils.ConfigUtil import ConfigUtil
-from src.Utils.LoggerUtil import LoggerUtil
+from Utils.ConfigUtil import ConfigUtil
+from Utils.LoggerUtil import LoggerUtil
 
 logger = LoggerUtil.instance()
 config = ConfigUtil.instance()

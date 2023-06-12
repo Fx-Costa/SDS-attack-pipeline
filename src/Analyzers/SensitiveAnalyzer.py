@@ -1,7 +1,7 @@
 import pandas as pd
-from src.Utils.LoggerUtil import LoggerUtil
-from src.Analyzers.Analyzer import Analyzer
-from src.File.SensitiveDatasetFile import SensitiveDatasetFile
+from Utils.LoggerUtil import LoggerUtil
+from Analyzers.Analyzer import Analyzer
+from File.SensitiveDatasetFile import SensitiveDatasetFile
 
 logger = LoggerUtil.instance()
 

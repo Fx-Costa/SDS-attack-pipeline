@@ -7,13 +7,13 @@ from Synthesizers.SDSSynthesizerFacade import SDSSynthesizerFacade
 from Attackers.NaiveAttacker import NaiveAttacker
 
 
-def main(n, m, k, sensitive_attribute, known_attributes):
+def main(n, m, cols, k, sensitive_attribute, known_attributes):
     # Create the file objects (generates directories and files at root)
     sensitive_dataset_file = SensitiveDatasetFile()
     synthetic_dataset_file = SyntheticDatasetFile()
 
     # Create sensitive dataset
-    sample = SamplerUtil().sample(n=n, m=m, cols=None)
+    sample = SamplerUtil().sample(n=n, m=m, cols=cols)
     sensitive_dataset_file.write(sample)
 
     # Perform analysis on the sensitive dataset to determine properties
@@ -33,10 +33,18 @@ def main(n, m, k, sensitive_attribute, known_attributes):
 
 
 if __name__ == '__main__':
-    n_input = int(input("Enter number of rows (int):"))
-    m_input= int(input("Enter number of columns (int):"))
-    k_input = int(input("Enter privacy resolution (k) (int):"))
+    # Take input
+    n_input = int(input("Enter number of rows to include in sample:"))
+    m_input = int(input("Enter number of columns to include in sample:"))
+    cols_input = input("Enter name(s) of column(s) to include in sample separated by spaces (optional):")
+    cols_list = cols_input.split()
+    k_input = int(input("Enter number for the privacy resolution (k):"))
     sensitive_attribute_input = input("Enter name of sensitive attribute:")
-    known_attributes_input = input("Enter name of known attributes separated by spaces:")
-    known_attributes = known_attributes_input.split()
-    main(n_input, m_input, k_input, sensitive_attribute_input, known_attributes)
+    known_attributes_input = input("Enter name(s) of known attribute(s) separated by spaces (optional):")
+    known_attributes_list = known_attributes_input.split()
+
+    # Set optional values to None if not given
+    if len(cols_list) < 1: cols_list = None
+    if len(known_attributes_list) < 1: known_attributes_list = None
+
+    main(n_input, m_input, cols_list, k_input, sensitive_attribute_input, known_attributes_list)

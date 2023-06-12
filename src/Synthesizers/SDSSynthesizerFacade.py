@@ -1,7 +1,7 @@
-from src.Utils.ConfigUtil import ConfigUtil
-from src.Utils.LoggerUtil import LoggerUtil
+from Utils.ConfigUtil import ConfigUtil
+from Utils.LoggerUtil import LoggerUtil
+from File.SynthesisConfigFile import SynthesisConfigFile
 from lib.python_pipeline.src.showcase import runForConfig
-from src.File.SynthesisConfigFile import SynthesisConfigFile
 
 logger = LoggerUtil.instance()
 config = ConfigUtil.instance()

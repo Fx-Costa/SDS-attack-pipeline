@@ -1,7 +1,7 @@
 import pandas as pd
-from src.Utils.LoggerUtil import LoggerUtil
-from src.Analyzers.Analyzer import Analyzer
-from src.File.SyntheticDatasetFile import SyntheticDatasetFile
+from Utils.LoggerUtil import LoggerUtil
+from Analyzers.Analyzer import Analyzer
+from File.SyntheticDatasetFile import SyntheticDatasetFile
 
 logger = LoggerUtil.instance()
 

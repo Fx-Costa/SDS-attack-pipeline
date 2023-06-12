@@ -1,5 +1,5 @@
 import logging
-from src.Utils.ConfigUtil import ConfigUtil
+from Utils.ConfigUtil import ConfigUtil
 
 
 class LoggerUtil:

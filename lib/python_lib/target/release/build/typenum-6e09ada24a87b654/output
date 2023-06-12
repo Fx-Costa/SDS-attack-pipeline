@@ -1,3 +1,0 @@
-cargo:rerun-if-changed=build/main.rs
-cargo:rustc-env=TYPENUM_BUILD_CONSTS=C:\Users\Fx\Desktop\Bachelor Project\NIST dataset\Sampler\lib-python\target\release\build\typenum-6e09ada24a87b654\out\consts.rs
-cargo:rustc-env=TYPENUM_BUILD_OP=C:\Users\Fx\Desktop\Bachelor Project\NIST dataset\Sampler\lib-python\target\release\build\typenum-6e09ada24a87b654\out\op.rs

@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
-from src.Utils.LoggerUtil import LoggerUtil
-from src.Analyzers.SyntheticAnalyzer import SyntheticAnalyzer
-from src.File.SyntheticDatasetFile import SyntheticDatasetFile
-from src.File.SensitiveDatasetFile import SensitiveDatasetFile
-from src.Synthesizers.SDSSynthesizerFacade import SDSSynthesizerFacade
+from Utils.LoggerUtil import LoggerUtil
+from Analyzers.SyntheticAnalyzer import SyntheticAnalyzer
+from File.SyntheticDatasetFile import SyntheticDatasetFile
+from File.SensitiveDatasetFile import SensitiveDatasetFile
+from Synthesizers.SDSSynthesizerFacade import SDSSynthesizerFacade
 
 logger = LoggerUtil.instance()
 
@@ -37,7 +37,7 @@ class NaiveAttacker:
         A method for constructing payloads for later injection based on known_data and a potential value.
         The payload is repeated repitition number of times before returning the complete dataframe.
 
-        :param known_data: series
+        :param known_data: list of strings
         :param sensitive_col: string
         :param value: numerical
         :param repetitions: int
@@ -84,7 +84,7 @@ class NaiveAttacker:
         A method for determining k (the privacy resolution) used by the underlying synthesizer to synthesize a dataset.
 
         :param sensitive_col: string
-        :param known_data: series
+        :param known_data: list of strings
         :return: int
         """
         logger.info("Commencing attack; Injecting poisoned data to find K...")
@@ -120,7 +120,7 @@ class NaiveAttacker:
         A method for determining the sensitive value of the target record, given k and the sensitive attribute.
 
         :param sensitive_col: string
-        :param known_data: series
+        :param known_data: list of strings
         :param k: int
         :return: list of object
         """
